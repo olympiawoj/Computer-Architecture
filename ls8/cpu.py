@@ -178,5 +178,3 @@ class CPU:
                 sys.exit(1)
 
 
-# Add code to parse inputs when you call on command line
-print()
