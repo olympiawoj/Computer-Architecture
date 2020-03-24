@@ -65,6 +65,13 @@ class CPU:
         self.ram = [0] * 256  # Init RAM - 1 8-bit byte can store 256 possible values (0 to 255 in decimal or 0 to FF in hex base16
 
         self.reg = [0]* 8 #preallocate our register with 8, R0 -> R7
+        self.halted = False 
+        self.instruction = {
+            0b00000001: self.HLT,
+            0b10000010: self.LDI,
+            0b01000111: self.PRN,
+            0b10100010: self.MUL,
+        }
 
 
     def load(self, filename):
@@ -100,25 +107,6 @@ class CPU:
             sys.exit(2)
 
         f.close()
-        # # For now, we've just hardcoded a program:
-        # LDI = 0b10000010
-        # PRINT_NUM = 0b01000111 #prints R0
-        # HLT = 0b00000001
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
-
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -167,13 +155,31 @@ class CPU:
         print()
 
     def HLT(self):
-        pass
+        self.halted = True 
+        self.pc +=1
+        sys.exit(0)
+
     def PRN(self):
-        pass
+        reg = self.ram_read(self.pc + 1)
+        print(self.reg[reg])
+        self.pc += 2
+
     def MUL(self):
-        pass 
-    def LDI(self):
-        pass
+        reg_a = self.ram_read(self.pc + 1)
+        reg_b = self.ram_read(self.pc + 2)
+        self.alu("MUL", reg_a, reg_b )
+        self.pc += 3 
+
+    def LDI(self): 
+        '''
+        Set the value of a register to an integer
+        Takes 3 args 1) immediate 2) register number 3) 8 bit immediate value 
+        '''
+        reg = self.ram_read(self.pc + 1)
+        num = self.ram_read(self.pc + 2)
+        #write to register
+        self.reg[reg] = num
+        self.pc += 3   
 
     def run(self):
         """Run the CPU."""
@@ -185,46 +191,14 @@ class CPU:
         #Flag that says if our program is running or not
         running = True 
 
-        while running:
+        #While not halted..
+        while not self.halted:
             #Get the instruction from ram and store in the local instructor register
             instruction = self.ram[self.pc]
-     
-            # self.trace()
-            
+    
             # If instruction is HLT handle
-            if instruction == HLT: 
-                running = False 
-                #Exit the loop
-                sys.exit(0)
-                self.pc += 1
-
-
-            # If instruction is LDI handle
-            elif instruction == LDI:
-                '''
-                Set the value of a register to an integer
-                Takes 3 args 1) immediate 2) register number 3) 8 bit immediate value 
-                
-                '''
-                reg = self.ram_read(self.pc + 1)
-                num = self.ram_read(self.pc + 2)
-                #write to register
-                self.reg[reg] = num
-                # print(f'reg:{reg}, num: {num}')
-                self.pc += 3 
-
-            # If instruction is PRN handle 
-            elif instruction == PRN:
-                reg = self.ram_read(self.pc + 1)
-                print(self.reg[reg])
-                self.pc += 2
-
-            ##extract out
-            elif instruction == MUL:
-                reg_a = self.ram_read(self.pc + 1)
-                reg_b = self.ram_read(self.pc + 2)
-                self.alu("MUL", reg_a, reg_b )
-                self.pc += 3
+            if instruction == HLT or instruction == LDI or instruction == PRN or instruction == MUL: 
+                self.instruction[instruction]()
 
             else:
                 raise Exception(f"Error: Instruction {instruction} does not exist")
