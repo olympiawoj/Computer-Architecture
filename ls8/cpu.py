@@ -71,8 +71,11 @@ class CPU:
             0b10000010: self.LDI,
             0b01000111: self.PRN,
             0b10100010: self.MUL,
+            0b01000101: self.PUSH,
+            0b01000110: self.POP,
         }
-
+        self.sp = 7 #stack pointer location in registers
+        self.reg[self.sp] = 0xF4 #initialize stack pointer at sp (7) to 0xF4
 
     def load(self, filename):
         """Load a program into memory."""
@@ -179,7 +182,42 @@ class CPU:
         num = self.ram_read(self.pc + 2)
         #write to register
         self.reg[reg] = num
-        self.pc += 3   
+        self.pc += 3  
+
+    def PUSH(self):
+        '''
+        PUSH register-
+        Pushes the value in the given register on the stack - arg: MDR (memory data register)
+        '''
+        #Decrement SP by 1
+        self.reg[self.sp] -= 1 
+
+        #Get register arg from push
+        operand_a = self.ram_read(self.pc + 1)
+        
+        #Copy the value in the given register to the address pointed at by SP 
+        val = self.reg[operand_a]
+        self.ram_write(self.reg[self.sp], val)
+        #Increment program counter by 2
+        self.pc +=2
+      
+    def POP(self):
+        '''
+        POP register -
+        Pops the value at the top of the stack into the given register
+        '''
+        #Get register arg from push 
+        operand_a = self.ram_read(self.pc + 1)
+
+        #Copy the value from the address pointed to by SP to the given register
+        val = self.ram_read(self.reg[self.sp])
+
+        #Copy the value - i.e. at register, add the value
+        self.reg[operand_a] = val 
+        #Increment SP
+        self.reg[self.sp] +=1
+        #Increment program counter by 2
+        self.pc += 2
 
     def run(self):
         """Run the CPU."""
@@ -191,17 +229,20 @@ class CPU:
         #Flag that says if our program is running or not
         running = True 
 
+        # a = self.ram_read(self.pc + 1)
+        # b = self.ram_read(self.pc + 2)
+
         #While not halted..
         while not self.halted:
             #Get the instruction from ram and store in the local instructor register
             instruction = self.ram[self.pc]
-    
+            self.instruction[instruction]()
+
             # If instruction is HLT handle
-            if instruction == HLT or instruction == LDI or instruction == PRN or instruction == MUL: 
-                self.instruction[instruction]()
+            # if instruction == HLT or instruction == LDI or instruction == PRN or instruction == MUL or instruction == PUSH or instruction == POP: 
+            #     self.instruction[instruction]()
+            # else:
+            #     raise Exception(f"Error: Instruction {instruction} does not exist")
+            #     sys.exit(1)
 
-            else:
-                raise Exception(f"Error: Instruction {instruction} does not exist")
-                sys.exit(1)
-
-
+            
