@@ -9,10 +9,29 @@ We're going to write an emulator for the world-famous LambdaSchool-8 computer,
 otherwise known as LS-8! This is an 8-bit computer with 8-bit memory addressing,
 which is about as simple as it gets.
 
+**Notes**
+- Bytes are data stored in RAM (memory), each element in RAM can store one byte per address, an 8 bit number
+- CPU Words - larger 64-bit (8 byte) numbers store sequentially in RAM that the CPU can operate on are Words 
+- 1 byte = 8 bit CPU
+- 4 bytes = 32 bit CPU
+- 8 bytes = 64 bit CPU
+
+RAM (Random Access Memory)
+- Values are written in _hexadecimal_ bc _hex bytes_ are _2 digits long_ so it's convenient 
+
+**Decimal is base10** -> 10 digits -> 0, 1, 2, 3, 4, 5, 6, 7, 8,9 
+**Binary is base20** -> 2 digits -> 0, 1
+**Hexadecimal(hex)** is base16 -> 16 digits -> 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F
+
 An 8 bit CPU is one that only has 8 wires available for addresses (specifying
-where something is in memory), computations, and instructions. With 8 bits, our
-CPU has a total of 256 bytes of memory and can only compute values up to 255.
-The CPU could support 256 instructions, as well, but we won't need them.
+where something is in memory), computations, and instructions. With 8 bits, our CPU has a total of 256 bytes of memory and can only compute values up to 255. The CPU could support 256 instructions, as well, but we won't need them.
+
+**Registers** - 
+- Registers store words that can be accessed at ultra high-speed
+- Similar to RAM, except stored directly on the CPU so they're much faster
+- Often have fixed names R0, R1, etc. 
+- memory locations within the CPU used for retrieving instructions, reading and writing memory, and executing commands. 
+**PC**- A special register that holds the address of the currently executing instruction 
 
 For starters, we'll execute code that stores the value 8 in a register,
 then prints it out:
