@@ -28,8 +28,9 @@ import sys
 LDI = 0b10000010
 PRN= 0b01000111 # PRN R0
 HLT = 0b00000001 # HLT
-# print(f" LDI: {LDI}, PRN: {PRN}, HLT: {HLT}" )
 MUL = 0b10100010
+ADD = 0b10100000    
+SUB = 0b10100011    
 
 # 10000010 # LDI R0,8
 # 00000000
@@ -73,7 +74,11 @@ class CPU:
             0b10100010: self.MUL,
             0b01000101: self.PUSH,
             0b01000110: self.POP,
-        }
+            0b01010000: self.CALL,
+            0b00010001: self.RET,
+            0b10100000: self.ADD
+        } 
+
         self.sp = 7 #stack pointer location in registers
         self.reg[self.sp] = 0xF4 #initialize stack pointer at sp (7) to 0xF4
 
@@ -172,6 +177,12 @@ class CPU:
         reg_b = self.ram_read(self.pc + 2)
         self.alu("MUL", reg_a, reg_b )
         self.pc += 3 
+    
+    def ADD(self):
+        reg_a = self.ram_read(self.pc + 1)
+        reg_b = self.ram_read(self.pc + 2)
+        self.alu("ADD", reg_a, reg_b)
+        self.pc += 3
 
     def LDI(self): 
         '''
@@ -184,7 +195,7 @@ class CPU:
         self.reg[reg] = num
         self.pc += 3  
 
-    def PUSH(self):
+    def PUSH(self, MDR=None):
         '''
         PUSH register-
         Pushes the value in the given register on the stack - arg: MDR (memory data register)
@@ -193,11 +204,12 @@ class CPU:
         self.reg[self.sp] -= 1 
 
         #Get register arg from push
-        operand_a = self.ram_read(self.pc + 1)
+        data = MDR if MDR else self.reg[self.ram_read(self.pc + 1)]
         
         #Copy the value in the given register to the address pointed at by SP 
-        val = self.reg[operand_a]
-        self.ram_write(self.reg[self.sp], val)
+        # 
+        
+        self.ram_write(self.reg[self.sp], data)
         #Increment program counter by 2
         self.pc +=2
       
@@ -207,17 +219,37 @@ class CPU:
         Pops the value at the top of the stack into the given register
         '''
         #Get register arg from push 
-        operand_a = self.ram_read(self.pc + 1)
+        reg_a = self.ram_read(self.pc + 1)
 
         #Copy the value from the address pointed to by SP to the given register
         val = self.ram_read(self.reg[self.sp])
 
         #Copy the value - i.e. at register, add the value
-        self.reg[operand_a] = val 
+        self.reg[reg_a] = val 
         #Increment SP
         self.reg[self.sp] +=1
         #Increment program counter by 2
         self.pc += 2
+
+    def CALL(self):
+        '''
+        CALL register- Calls a subroutine (function) at the address stored in the register.
+
+        1. The address of the instruction directly after CALL is pushed onto the stack. This allows us to return to where we left off when the subroutine finishes executing.
+        2. The PC is set to the address stored in the given register. We jump to that location in RAM and execute the first instruction in the subroutine. The PC can move forward or backwards from its current location.
+        '''
+        self.PUSH(self.pc+2)
+        self.pc = self.reg[self.ram_read(self.pc-1)]
+
+    def RET(self):
+        '''
+        RET- Return from subroutine.
+        Pop the value from the top of the stack and store it in the PC.
+
+        '''
+
+        self.pc = self.ram_read(self.reg[self.sp])
+        self.reg[self.sp] += 1
 
     def run(self):
         """Run the CPU."""
